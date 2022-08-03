@@ -7,8 +7,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from concurrent.futures import ThreadPoolExecutor
 
-all_name = []  # 全域list 儲存同機構所有典藏物品名稱，以方便檢查是否名稱重複
 
+all_name = []
+# //*[@id="GridView1"]/tbody/tr/td/table/tbody/tr/td[4]/a
+# 造訪各類別網頁
 
 def mkdir(path):
     # 判斷目錄是否存在 存在：True 不存在：False
@@ -33,8 +35,7 @@ def getimage(url_image, organ, name, save_path):
         file.write(img_.content)  # 寫入檔案
 
 
-# 造訪各類別網頁
-def each(urlss, path, organize_class_name):
+def each(urlss, path):
     print(path)
     path_tmp = []
     driver.get(urlss)  # 程式自動開啟Google Chrome前往urlss其網址
@@ -45,10 +46,7 @@ def each(urlss, path, organize_class_name):
     print(f'This class has {count} pages')
     driver.find_element(By.XPATH, '//*[@id="GridView1"]/tbody/tr/td/table/tbody/tr/td[1]/input').click()  # 返回第一頁
     button_pos = 1  # 控制按鈕td之位置
-    page_control = True  # 第一頁與其他頁不同 設此布林值去控制
-    broken_page = False
-    if organize_class_name == '建築圖':
-        broken_page = True
+    pro = True  # 第一頁與其他頁不同 設此布林值去控制
     while True:  # 下載圖片之迴圈
         # page(1)
         # td位置     1 2 3 4 5  6  7
@@ -56,26 +54,26 @@ def each(urlss, path, organize_class_name):
         # other page
         # td位置      1  2  3 4 5 6  7   8   9
         # 按鈕 ->    << ... 6 7 8 9 10  ... >>
-        if button_pos > 6 and page_control:  # 若第一頁的(...)按鈕被按後進入第二頁
+        if button_pos > 6 and pro:  # 若第一頁的(...)按鈕被按後進入第二頁
             button_pos = 3  # 按鈕開始位置由td[3]開始
-            page_control = False  # 將不再執行第一頁之程序
-        if button_pos > 8 and not page_control:  # 第二開始至最後一頁的程序
+            pro = False  # 將不再執行第一頁之程序
+        if button_pos > 8 and not pro:  # 第二開始至最後一頁的程序
             button_pos = 3  # 按鈕開始位置由td[3]開始
 
         driver.find_element(By.XPATH, "//*[@id='GridView1']/tbody/tr/td/table/tbody/tr/td[" + str(
             button_pos) + "]").click()  # 尋找下一頁按鈕並點擊
 
-        if button_pos == 8 and not page_control or button_pos == 6 and page_control:  # 若是點擊(...)鍵則不讀取照片
+        if button_pos == 8 and not pro or button_pos == 6 and pro:  # 若是點擊(...)鍵則不讀取照片
             button_pos += 1
             continue
 
         button_num = driver.find_element(By.XPATH, "//*[@id='GridView1']/tbody/tr/td/table/tbody/tr/td[" + str(
             button_pos) + "]/span")  # 取得頁面之頁數 //*[@id="GridView1"]/tbody/tr/td/table/tbody/tr/td[4]/a
         button_pos += 1
-
-        if int(button_num.text) == 1246 and broken_page:
+        print("%d" % int(button_num.text), end='\r')
+        if int(button_num.text) == 1246:
             continue
-
+        
         source = driver.page_source  # 取得網頁原始碼
         soup = BeautifulSoup(source, "html.parser")  # 取得網頁原始碼
         a_elem = soup.select('a[class="d-block"]')  # 選擇縮圖之元素
@@ -114,12 +112,13 @@ def each(urlss, path, organize_class_name):
 
         with ThreadPoolExecutor() as executor:  # 多執行緒以減少下載圖片時間
             executor.map(getimage, image, organ, name, path_tmp)  # 同時下載圖片
-        time.sleep(1)  # 避免網站過度佔用時間 (暫定)
-        if int(button_num.text) == count:  # 若頁面全部跑完則跳出迴圈
+        time.sleep(0.6)
+
+        if int(button_num.text) == 5754:  # 若頁面全部跑完則跳出迴圈
             break
+
         time.sleep(3)  # 避免網站過度佔用時間 (暫定)
     all_name.clear()  # 清空list
-    time.sleep(3)  # 避免網站過度佔用時間 (暫定)
 
 
 # Chrome driver 前置作業
@@ -128,28 +127,5 @@ driver = webdriver.Chrome(service=s)
 
 path_now = os.getcwd()  # 取得當前路徑
 mkdir(path_now + "/image")  # 在目前程式資料夾底下建立目錄名為image的資料夾
-
-main_page_requests = requests.get("https://collections.culture.tw/Class.aspx")  # 進入主網頁
-main_page_result = BeautifulSoup(main_page_requests.text, 'html.parser')  # 回傳網頁原始碼
-
-# start search
-all_main_class = main_page_result.select('div[class="col-12 mb-4"]')
-all_main_class.pop(0)
-for i in all_main_class:
-    title_elem = i.select('h2[class="ClassTypeTitle d-block mb-1"]')
-    if not len(title_elem):
-        title_elem = i.select('h2[class="ClassTypeTitle d-block"]')
-    # print(title_elem[0].text)
-    mkdir(path_now + "/image/" + title_elem[0].text)
-    urls = i.select('a[class="ClassBoxItem d-flex align-items-center justify-content-center"]')
-    for j in urls:
-        # print(j.get('href'))
-        # print(j.text.strip())
-        mkdir(path_now + "/image/" + title_elem[0].text + "/" + j.text.strip())
-        # print(str(j.get('href')), path_now + "/image/" + title_elem[0].text + "/" + j.text.strip() + "/")
-        path_complete = path_now + "/image/" + title_elem[0].text + "/" + j.text.strip() + "/"
-        each("https://collections.culture.tw/" + str(j.get('href')), path_complete, j.text.strip)
-        time.sleep(5)
-
-time.sleep(5)
-driver.quit()  # 退出
+mkdir(path_now + "/image/圖書文獻類/建築圖")
+each("https://collections.culture.tw/Search2.aspx?EXKIND=5R57&AATAB1=MWMSMNMY", path_now + "/image/圖書文獻類/建築圖/")
