@@ -141,11 +141,10 @@ main_page_result = BeautifulSoup(main_page_requests.text, 'html.parser')  # 回�
 # start search
 all_main_class = main_page_result.select('div[class="col-12 mb-4"]')  # 取得大分類之名稱
 all_main_class.pop(0)  # 刪除收集資料發現的空內容
-for i in all_main_class:  # 依序拜訪大分類下的小分類
-    title_elem = i.select('h2[class="ClassTypeTitle d-block mb-1"]')   # 取得大分類下所有小分類之名稱
-    print
+for i in all_main_class:  # 依序拜訪大分類
+    title_elem = i.select('h2[class="ClassTypeTitle d-block mb-1"]')   # 取得大分類所有之名稱
     if not len(title_elem):
-        print("test")
+        # print("test")
         title_elem = i.select('h2[class="ClassTypeTitle d-block"]')
     # print(title_elem[0].text)
     mkdir(path_now + "/image/" + title_elem[0].text)
@@ -156,7 +155,7 @@ for i in all_main_class:  # 依序拜訪大分類下的小分類
         mkdir(path_now + "/image/" + title_elem[0].text + "/" + j.text.strip())
         # print(str(j.get('href')), path_now + "/image/" + title_elem[0].text + "/" + j.text.strip() + "/")
         path_complete = path_now + "/image/" + title_elem[0].text + "/" + j.text.strip() + "/"
-        each("https://collections.culture.tw/" + str(j.get('href')), path_complete, j.text.strip)
+        each("https://collections.culture.tw/" + str(j.get('href')), path_complete, j.text.strip())
         time.sleep(5)
 
 time.sleep(5)
