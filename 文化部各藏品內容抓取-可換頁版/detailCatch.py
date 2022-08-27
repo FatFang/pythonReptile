@@ -47,11 +47,16 @@ def Detail(collect_url, collect_name, collect_organ, save_path):
     print(image_src)
     # check_ul_or_div = True
     if len(d) == 0:
-        collect_data = []
+        collect_data_list = []
+        collect_data_dict = {}
         div_elem = c[0].select('div[class="mt-1"]')
         for i in div_elem:
-            collect_data.append(i.text)
-        print(collect_data)
+            collect_data_list.append(i.text)
+        # print(collect_data)
+        for i in range(len(collect_data_list)):
+            collect_data_dict[i] = collect_data_list[i]
+        with open(save_path + collect_organ + '-' + collect_name + '.json', 'w', encoding="utf-8") as fp:
+            json.dump(collect_data_dict, fp, indent=4, ensure_ascii=False)
     else:
         collect_data = {}
         li_elem = d[0].select('li')
@@ -145,7 +150,7 @@ def catchDetail(url, save_mkdir, class_name):
         print(end - start)
         if int(button_num.text) == count and not page_big_six:
             break
-        if int(button_num.text) == count:  # 若頁面全部跑完則跳出迴圈
+        if int(button_num.text) == 1:  # 若頁面全部跑完則跳出迴圈
             break
         time.sleep(2.5)
         # for j in range(len(this_page_names)):
@@ -193,10 +198,6 @@ for i in range(71):
     print(1)
     # print(all_urls[i], all_save_paths[i], all_class_name[i])
     catchDetail(all_urls[i], all_save_paths[i], all_class_name[i])
-    # break
+    break
 
 driver.quit()  # 退出
-# path_complete = path_now + "/image/" + title_elem[0].text + "/" + j.text.strip() + "/"
-# each("https://collections.culture.tw/" + str(j.get('href')), path_complete, j.text.strip)
-
-#<img id="imgLarge" class="img-fluid" src="ShowGalImage.aspx?SYSUID=118&amp;IMG=KMKMKHMMMMMEMEKM5M5V5RKCK55V575M595TME5S5VKAMCMKM65G5V53MLKQKAKEM25TKEM85VKGMMKQMFM55D59KJK6KL51KC0BMAM60GMD0AM6MA01MWMA0EMW&amp;TEXT=K7KB5H525U5Q5C&amp;FROM=5YKK57" style="border-width:0px;">
